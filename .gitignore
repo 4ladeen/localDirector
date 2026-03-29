@@ -1,0 +1,45 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.so
+*.egg
+*.egg-info/
+dist/
+build/
+*.spec
+
+# Virtual environments
+venv/
+env/
+.venv/
+.env/
+
+# Temporary processing files
+/tmp/
+
+# Output files
+*.mp4
+*.mkv
+*.wav
+*.ass
+*.srt
+final_summary_ready.mp4
+metadata.txt
+process.log
+
+# AI model caches
+.cache/
+huggingface/
+models/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db

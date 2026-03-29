@@ -1,0 +1,44 @@
+# Core Python web/scraping
+requests>=2.31.0
+beautifulsoup4>=4.12.0
+lxml>=4.9.0
+
+# Subtitle parsing
+pysrt>=1.1.2
+
+# NLP / Semantic Matching
+sentence-transformers>=2.2.2
+
+# Computer Vision / Framing
+opencv-python>=4.8.0
+dlib>=19.24.0
+
+# Speech-to-Text
+openai-whisper>=20230918
+
+# Speaker Diarization
+pyannote.audio>=3.1.0
+
+# Audio Stem Separation
+demucs>=4.0.0
+
+# Audio Analysis
+librosa>=0.10.0
+
+# Video/Audio Manipulation
+ffmpeg-python>=0.2.0
+
+# Background Removal (Parallax)
+rembg>=2.0.50
+
+# Metadata Generation (Ollama local LLM client)
+ollama>=0.1.7
+
+# System monitoring (OOM protection)
+psutil>=5.9.0
+
+# Progress display
+tqdm>=4.66.0
+
+# Numpy (shared dependency)
+numpy>=1.24.0
