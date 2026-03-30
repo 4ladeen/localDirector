@@ -13,7 +13,7 @@ Responsibilities
 import os
 import subprocess
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import librosa
 import numpy as np
@@ -39,6 +39,22 @@ DEFAULT_SPEAKER_COLOR = "&HFFFFFF&"   # White fallback
 # 3.1  Stem Separation (Demucs)
 # ---------------------------------------------------------------------------
 
+def _is_cuda_related_demucs_failure(stderr: str) -> bool:
+    """
+    Heuristically detect Demucs failures caused by CUDA/GPU availability issues.
+    """
+    text = (stderr or "").lower()
+    markers = (
+        "cuda initialization",
+        "nvidia driver",
+        "found no nvidia driver",
+        "cuda driver",
+        "torch.cuda",
+        "cuda error",
+    )
+    return any(marker in text for marker in markers)
+
+
 @log_timing("Demucs Stem Separation")
 def separate_stems(
     audio_path: str,
@@ -53,15 +69,33 @@ def separate_stems(
     out_dir = os.path.join(tmp_dir, "demucs_out")
     os.makedirs(out_dir, exist_ok=True)
 
-    cmd = [
+    base_cmd = [
         sys.executable, "-m", "demucs",
         "--out", out_dir,
         "--name", model,
         "--two-stems", "vocals",
-        audio_path,
     ]
+
+    def _build_demucs_cmd(device: Optional[str] = None) -> List[str]:
+        cmd = list(base_cmd)
+        if device:
+            cmd.extend(["--device", device])
+        cmd.append(audio_path)
+        return cmd
+
+    cmd = _build_demucs_cmd()
     logger.info("Running Demucs on %s…", audio_path)
     result = subprocess.run(cmd, capture_output=True, text=True)
+
+    if (
+        result.returncode != 0
+        and _is_cuda_related_demucs_failure(result.stderr)
+    ):
+        logger.warning(
+            "Demucs failed with a CUDA-related error; retrying on CPU."
+        )
+        cpu_cmd = _build_demucs_cmd("cpu")
+        result = subprocess.run(cpu_cmd, capture_output=True, text=True)
 
     if result.returncode != 0:
         logger.error("Demucs failed:\n%s", result.stderr)
