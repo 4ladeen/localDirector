@@ -84,20 +84,17 @@ def separate_stems(
         return cmd
 
     cmd = _build_demucs_cmd()
-    attempted_cpu_retry = False
     logger.info("Running Demucs on %s…", audio_path)
     result = subprocess.run(cmd, capture_output=True, text=True)
 
     if (
         result.returncode != 0
-        and not attempted_cpu_retry
         and _is_cuda_related_demucs_failure(result.stderr)
     ):
         logger.warning(
             "Demucs failed with a CUDA-related error; retrying on CPU."
         )
         cpu_cmd = _build_demucs_cmd("cpu")
-        attempted_cpu_retry = True
         result = subprocess.run(cpu_cmd, capture_output=True, text=True)
 
     if result.returncode != 0:
