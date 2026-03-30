@@ -13,7 +13,7 @@ Responsibilities
 import os
 import subprocess
 import sys
-from typing import Dict, List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import librosa
 import numpy as np
@@ -69,21 +69,35 @@ def separate_stems(
     out_dir = os.path.join(tmp_dir, "demucs_out")
     os.makedirs(out_dir, exist_ok=True)
 
-    cmd = [
+    base_cmd = [
         sys.executable, "-m", "demucs",
         "--out", out_dir,
         "--name", model,
         "--two-stems", "vocals",
-        audio_path,
     ]
+
+    def _build_demucs_cmd(device: Optional[str] = None) -> List[str]:
+        cmd = list(base_cmd)
+        if device:
+            cmd.extend(["--device", device])
+        cmd.append(audio_path)
+        return cmd
+
+    cmd = _build_demucs_cmd()
+    attempted_cpu_retry = False
     logger.info("Running Demucs on %s…", audio_path)
     result = subprocess.run(cmd, capture_output=True, text=True)
 
-    if result.returncode != 0 and _is_cuda_related_demucs_failure(result.stderr):
+    if (
+        result.returncode != 0
+        and not attempted_cpu_retry
+        and _is_cuda_related_demucs_failure(result.stderr)
+    ):
         logger.warning(
             "Demucs failed with a CUDA-related error; retrying on CPU."
         )
-        cpu_cmd = cmd[:-1] + ["--device", "cpu", cmd[-1]]
+        cpu_cmd = _build_demucs_cmd("cpu")
+        attempted_cpu_retry = True
         result = subprocess.run(cpu_cmd, capture_output=True, text=True)
 
     if result.returncode != 0:
